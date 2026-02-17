@@ -1,17 +1,8 @@
 // themeManager.ts
-import * as SDK from 'azure-devops-extension-sdk';
+// This file is currently not in use
+// Theme is applied automatically by the SDK when applyTheme: true is set in init options
 
 export const initializeTheme = () => {
-  SDK.init().then(() => {
-    // Assuming there's a global VSS object available
-    VSS.require(["TFS/Dashboards/WidgetHelpers"], (WidgetHelpers) => {
-      WidgetHelpers.ThemeService.getService().then((themeService) => {
-        themeService.getTheme().then((theme) => {
-          // Apply your theme logic here
-          // This is a hypothetical example; actual implementation may vary
-          
-        });
-      });
-    });
-  });
+  // Theme is automatically applied by SDK
+  console.log("Theme will be applied automatically by SDK");
 };

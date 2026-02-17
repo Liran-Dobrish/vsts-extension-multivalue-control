@@ -7,10 +7,45 @@ import {
   FocusZoneDirection,
 } from "office-ui-fabric-react/lib/FocusZone";
 import * as React from "react";
+import * as SDK from "azure-devops-extension-sdk";
 
+// Helper for delayed function execution
+class DelayedFunction {
+  private timeout: NodeJS.Timeout | null = null;
+  private delay: number;
+  private callback: () => void;
 
-import { DelayedFunction } from "VSS/Utils/Core";
-import { BrowserCheckUtils } from "VSS/Utils/UI";
+  constructor(_: any, delay: number, __: string, callback: () => void) {
+    this.delay = delay;
+    this.callback = callback;
+  }
+
+  start() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+    this.timeout = setTimeout(this.callback, this.delay);
+  }
+
+  cancel() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+  }
+
+  reset() {
+    this.cancel();
+  }
+}
+
+// Helper for browser detection
+class BrowserCheckUtils {
+  static isSafari(): boolean {
+    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  }
+}
+
 
 interface IMultiValueControlProps {
   selected?: string[];
@@ -45,10 +80,15 @@ export class MultiValueControl extends React.Component<
 > {
   private readonly _unfocusedTimeout = BrowserCheckUtils.isSafari() ? 2000 : 150;
   private readonly _allowCustom: boolean =
-    VSS.getConfiguration().witInputs.AllowCustom;
-  private readonly _labelDisplayLength: number = VSS.getConfiguration()
+    SDK.getConfiguration().witInputs.AllowCustom;
+  private readonly _showSelectAll: boolean = 
+    SDK.getConfiguration().witInputs.ShowSelectAll !== undefined
+    ? SDK.getConfiguration().witInputs.ShowSelectAll === true || 
+      SDK.getConfiguration().witInputs.ShowSelectAll === "true"
+    : true; // Default to true if not specified
+  private readonly _labelDisplayLength: number = SDK.getConfiguration()
     .witInputs.LabelDisplayLength
-    ? VSS.getConfiguration().witInputs.LabelDisplayLength
+    ? SDK.getConfiguration().witInputs.LabelDisplayLength
     : 35;
   private _setUnfocused = new DelayedFunction(
     null,
@@ -92,7 +132,6 @@ export class MultiValueControl extends React.Component<
       isToggled: !prevState.isToggled,
       focused: !prevState.focused,
     }));
-    this._onTagsChanged
   };
 
   _getOptions() {
@@ -113,8 +152,8 @@ export class MultiValueControl extends React.Component<
           onChange={this._onInputChange}
           multiline={this.state.multiline}
         />
-        <FocusZone direction={FocusZoneDirection.vertical}>
-          {this.state.filter ? null : (
+        <FocusZone direction={FocusZoneDirection.vertical} className="checkboxes">
+          {this._showSelectAll && !this.state.filter ? (
             <Checkbox
               className="text"
               label="Select All"
@@ -126,7 +165,7 @@ export class MultiValueControl extends React.Component<
                 onFocus: this._onFocus,
               }}
             />
-          )}
+          ) : null}
           {filteredOpts.map((o) => (
             <Checkbox
               key={o}
@@ -215,13 +254,7 @@ export class MultiValueControl extends React.Component<
 
     return filterEmptyElement.filter((el) => el !== "");
   };
-
-  private _onTagsChanged = (tags: any[]) => {
-    const values = tags.map(({name}) => name);
-    if (this.props.onSelectionChanged) {
-        this.props.onSelectionChanged(values);
-    }
-}
+  
   private _onInputChange = (
     event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>,
     newValue?: string
@@ -237,17 +270,20 @@ export class MultiValueControl extends React.Component<
   };
 
   private _onBlur = () => {
-    this._setUnfocused.reset();
+    this._setUnfocused.start();
   };
+  
   private _onFocus = () => {
     this._setUnfocused.cancel();
   };
+  
   private _setSelected = async (selected: string[]): Promise<void> => {
     if (!this.props.onSelectionChanged) {
       return;
     }
     await this.props.onSelectionChanged(selected);
   };
+  
   private _mergeStrArrays = (arrs: string[][]): string[] => {
     const seen: { [str: string]: boolean } = {};
     const merged: string[] = [];
@@ -261,6 +297,7 @@ export class MultiValueControl extends React.Component<
     }
     return merged;
   };
+  
   private _toggleOption = (option: string): boolean => {
     const selectedMap: { [k: string]: boolean } = {};
     for (const s of this.props.selected || []) {
@@ -278,6 +315,7 @@ export class MultiValueControl extends React.Component<
     this._ifSafariCloseDropdown();
     return change;
   };
+  
   private _ifSafariCloseDropdown() {
     if (BrowserCheckUtils.isSafari()) {
       this.setState({ filter: "", focused: false });
@@ -285,7 +323,20 @@ export class MultiValueControl extends React.Component<
   }
 
   private deleteTags = (tag: string, data: string[]) => {
-    const updatedTags = data.filter((t) => t !== tag);
+    // Find the original value by matching the truncated tag with the actual selected values
+    const originalSelected = this.props.selected || [];
+    const truncatedToOriginalMap: { [key: string]: string } = {};
+    
+    originalSelected.forEach(original => {
+      const truncated = original.length > Number(this._labelDisplayLength)
+        ? `${original.slice(0, Number(this._labelDisplayLength))}...`
+        : original;
+      truncatedToOriginalMap[truncated] = original;
+    });
+    
+    const originalTag = truncatedToOriginalMap[tag] || tag;
+    const updatedTags = originalSelected.filter((t) => t !== originalTag);
+    
     if (this.props.onSelectionChanged) {
       this.props.onSelectionChanged(updatedTags);
     }
@@ -302,7 +353,7 @@ export class MultiValueControl extends React.Component<
     return (
       <div
         className={`multi-value-control ${this.state.focused ? "focused" : ""}`}
-        style={{ width: "100%" }}
+        style={{ width: "100%", position: "relative", minHeight: "40px" }}
       >
         <input
           type="text"
@@ -316,13 +367,15 @@ export class MultiValueControl extends React.Component<
             display: "flex",
             flexDirection: "row",
             flexWrap: "wrap",
+            alignItems: "center",
             width: "100%",
-            padding: "5px",
+            padding: "10px",
+            minHeight: "40px",
           }}
         >
           {data?.map((t, index) => {
             return (
-              <div className="customTagPicker">
+              <div className="customTagPicker" key={index}>
                 <div className="tag-text">
                   {t.match(/.{1,50}/g)?.join("\n")}
                 </div>
@@ -337,18 +390,25 @@ export class MultiValueControl extends React.Component<
           })}
 
           {!data.length ? (
-            <div className="NoSlectionBtn"  onClick={this.toggleDropdown}   onBlur={this._onBlur} onFocus={this._onFocus}>
-        
-            No selection made
-         
-           </div>
+            <div 
+              className="NoSlectionBtn" 
+              onMouseDown={(e) => {
+                e.preventDefault();
+                this.toggleDropdown();
+              }}
+              tabIndex={0}
+            >
+              No selection made
+            </div>
           ) : (
             <IconButton
               iconProps={{ iconName: "Add" }}
-              onClick={this.toggleDropdown}
-              onBlur={this._onBlur}
-              onFocus={this._onFocus}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                this.toggleDropdown();
+              }}
               className={"AddBtn"}
+              tabIndex={0}
             />
           )}
         </div>

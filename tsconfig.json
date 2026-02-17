@@ -8,9 +8,7 @@
         "noUnusedLocals": true,
         "jsx": "react",
         "types": [
-            "knockout",
-            "requirejs",
-            "jquery",
+            "node",
             "react",
             "react-dom"
         ],
