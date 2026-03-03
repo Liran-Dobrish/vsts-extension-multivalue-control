@@ -1,6 +1,10 @@
+[forked from vsts-extension-multivalue-control](https://github.com/microsoft/vsts-extension-multivalue-control)
+
 # Multi-value-control
 
-The Multi-Value Control Azure DevOps Extension enhances work item forms by enabling the selection of multiple values within a single field. This functionality is ideal for scenarios requiring categorization under multiple tags.  The datasource is a Azure ADO wiki page within a porject.
+The Azure DevOps Multi-Value Control extension allows work item fields to accept multiple selections instead of a single value. This is useful when a work item needs to be associated with more than one category or tag.
+
+The selectable values are sourced directly from an Azure DevOps Wiki page.
 
 # Documentation
 
@@ -30,14 +34,6 @@ You can setup the control to either use a picklist or a semi-colon separate list
 
   ![stringField](img/stringField.png)
 
-
-### Add a Wiki page with the values for the control
-* Suggest a separate wiki page to maintain the values for the control. This allows users to easily update the list of values without needing to change the work item form configuration.
-  ![wikiTree](img/wikiTree.png)
-
-* On the selected page enter your list of values using the supported format described in the [Wiki Page Format](WIKI_PAGE_FORMAT.md).
- ![wikiData](img/wikiData.png)
-
 ### Add a Multi Value control to the work item form
 When you have created the work item field to store the value for the Multivalue control you can add the control to the form and link it to the underlying field.
 
@@ -59,6 +55,10 @@ When you have created the work item field to store the value for the Multivalue 
 
   ![addControlOptionsString](img/addControlOptionsString.png)
 
+# How to setup the Wiki page
+
+  [This page explains how to setup wiki page](marketplace/wiki_page_format.md)
+
 # How to query
 
 The selected values are stored in a semicolon separated format. To search for items that have a specific value use the "Contains Words" operator. If searching for multiple values, use multipe "Contains Words" clauses for that field.
@@ -69,8 +69,5 @@ You can also learn how to build your own custom control extension for the work i
 
 ## How to file issues and get help
 
-This project uses [GitHub Issues](https://github.com/dbloch3643/vsts-extension-wiki-multivalue-control/issues) to track bugs and feature requests. Please search the existing issues before filing new issues to avoid duplicates. For new issues, file your bug or feature request as a new Issue.
+This project uses [GitHub Issues](https://github.com/Microsoft/vsts-extension-multivalue-control/issues) to track bugs and feature requests. Please search the existing issues before filing new issues to avoid duplicates. For new issues, file your bug or feature request as a new Issue.
 
-## Microsoft Support Policy
-
-Support for this project is limited to the resources listed above.
