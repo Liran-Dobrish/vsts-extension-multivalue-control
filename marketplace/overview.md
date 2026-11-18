@@ -1,10 +1,14 @@
+[forked from vsts-extension-multivalue-control](https://github.com/microsoft/vsts-extension-multivalue-control)
+
 # Multi-value-control
 
-The Multi-Value Control Azure DevOps Extension enhances work item forms by enabling the selection of multiple values within a single field. This functionality is ideal for scenarios requiring categorization under multiple tags.
+The Azure DevOps Multi-Value Control extension allows work item fields to accept multiple selections instead of a single value. This is useful when a work item needs to be associated with more than one category or tag.
+
+The selectable values are sourced directly from an Azure DevOps Wiki page.
 
 # Documentation
 
-> Currently only available on TFS 2017 or later and Azure DevOps.
+> Currently only available on Azure DevOps.
 
 ## How to get started
 To use the Multivalue control you need a work item field to store the data used by the control and then add the Multivalue control to the form, linking it to the underlying field.
@@ -53,11 +57,9 @@ When you have created the work item field to store the value for the Multivalue 
 
   ![addControlOptionsString](img/addControlOptionsString.png)
 
-## XML process template
+# How to setup the Wiki page
 
-To define the layout for a work item type using XML, you'll need to add the Multivalue control to your layout
-
-[Learn more](https://github.com/Microsoft/vsts-extension-multivalue-control/blob/master/xmldetails.md) about how to customize the multivalue control directly on XML.
+  [This page explains how to setup wiki page](marketplace/wiki_page_format.md)
 
 # How to query
 
@@ -71,6 +73,3 @@ You can also learn how to build your own custom control extension for the work i
 
 This project uses [GitHub Issues](https://github.com/Microsoft/vsts-extension-multivalue-control/issues) to track bugs and feature requests. Please search the existing issues before filing new issues to avoid duplicates. For new issues, file your bug or feature request as a new Issue.
 
-## Microsoft Support Policy
-
-Support for this project is limited to the resources listed above.

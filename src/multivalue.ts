@@ -1,18 +1,6 @@
-/// <reference types="vss-web-extension-sdk" />
-
-import * as WitExtensionContracts from "TFS/WorkItemTracking/ExtensionContracts";
-import { WorkItemFormService } from "TFS/WorkItemTracking/Services";
+import * as SDK from "azure-devops-extension-sdk";
+import { WorkItemTrackingServiceIds, IWorkItemFormService, IWorkItemLoadedArgs, IWorkItemFieldChangedArgs } from "azure-devops-extension-api/WorkItemTracking";
 import { MultiValueEvents } from "./MultiValueEvents";
-
-// save on ctr + s
-$(window).bind("keydown", (event: JQueryEventObject) => {
-    if (event.ctrlKey || event.metaKey) {
-        if (String.fromCharCode(event.which) === "S") {
-            event.preventDefault();
-            WorkItemFormService.getService().then((service) => service.beginSaveWorkItem($.noop, $.noop));
-        }
-    }
-});
 
 const provider = () => {
     let control: MultiValueEvents;
@@ -25,10 +13,10 @@ const provider = () => {
     };
 
     return {
-        onLoaded: (args: WitExtensionContracts.IWorkItemLoadedArgs) => {
+        onLoaded: (args: IWorkItemLoadedArgs) => {
             ensureControl();
         },
-        onFieldChanged: (args: WitExtensionContracts.IWorkItemFieldChangedArgs) => {
+        onFieldChanged: (args: IWorkItemFieldChangedArgs) => {
             if (control && args.changedFields[control.fieldName] !== undefined &&
                 args.changedFields[control.fieldName] !== null
             ) {
@@ -38,4 +26,18 @@ const provider = () => {
     };
 };
 
-VSS.register(VSS.getContribution().id, provider);
+// Initialize the SDK and register the provider
+SDK.init().then(() => {
+    // save on ctr + s
+    window.addEventListener("keydown", async (event: KeyboardEvent) => {
+        if (event.ctrlKey || event.metaKey) {
+            if (event.key === "s" || event.key === "S") {
+                event.preventDefault();
+                const service = await SDK.getService<IWorkItemFormService>(WorkItemTrackingServiceIds.WorkItemFormService);
+                service.beginSaveWorkItem(() => {}, () => {});
+            }
+        }
+    });
+
+    SDK.register(SDK.getContributionId(), provider);
+});

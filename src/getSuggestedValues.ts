@@ -1,13 +1,38 @@
-import { WorkItemFormService } from "TFS/WorkItemTracking/Services";
+import * as SDK from "azure-devops-extension-sdk";
+import { IWorkItemFormService, WorkItemTrackingServiceIds } from "azure-devops-extension-api/WorkItemTracking";
+import { fetchValuesFromWiki } from "./wikiClient";
 
 export async function getSuggestedValues(): Promise<string[]> {
-    const inputs: IDictionaryStringTo<string> = VSS.getConfiguration().witInputs;
-    const valuesString: string = inputs.Values;
-    if (valuesString) {
-        return valuesString.split(";").filter((v) => !!v).map(s => s.trim());
+    const inputs: { [key: string]: string } = SDK.getConfiguration().witInputs;
+    
+    // Check if Wiki configuration is provided
+    const wikiProjectName = inputs.WikiProjectName;
+    const wikiPagePath = inputs.WikiPagePath;
+    
+    // If wiki is configured, try to fetch from wiki first
+    if (wikiProjectName && wikiPagePath) {
+        try {
+            const wikiName = inputs.WikiName;
+            
+            const wikiValues = await fetchValuesFromWiki({
+                projectName: wikiProjectName,
+                wikiName: wikiName || undefined,
+                wikiPagePath: wikiPagePath,
+            });
+            
+            if (wikiValues && wikiValues.length > 0) {
+                console.log(`Successfully fetched ${wikiValues.length} values from wiki`);
+                return wikiValues;
+            }
+            
+            console.warn("Wiki returned no values, falling back to field allowed values");
+        } catch (error) {
+            console.error("Failed to fetch values from wiki, falling back to field allowed values:", error);
+        }
     }
-    // if the values input were not specified as an input, get the suggested values for the field.
-    const service = await WorkItemFormService.getService();
-    const allowedValues = await service.getAllowedFieldValues(VSS.getConfiguration().witInputs.FieldName) as string[];
+    
+    // Fall back to field allowed values
+    const service = await SDK.getService<IWorkItemFormService>(WorkItemTrackingServiceIds.WorkItemFormService);
+    const allowedValues = await service.getAllowedFieldValues(inputs.FieldName) as string[];
     return allowedValues.filter((value) => value.indexOf(";") === -1);
 }

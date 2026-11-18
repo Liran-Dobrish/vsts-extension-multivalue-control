@@ -1,17 +1,18 @@
 import { initializeIcons } from "office-ui-fabric-react/lib/Icons";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { getClient } from "TFS/WorkItemTracking/RestClient";
-import { WorkItemFormService } from "TFS/WorkItemTracking/Services";
+import * as SDK from "azure-devops-extension-sdk";
+import { IWorkItemFormService, WorkItemTrackingServiceIds, WorkItemTrackingRestClient } from "azure-devops-extension-api/WorkItemTracking";
+import { getClient } from "azure-devops-extension-api";
 
 import { getSuggestedValues } from "./getSuggestedValues";
 import { MultiValueControl } from "./MultiValueControl";
 
 initializeIcons();
-const HELP_URL = "https://github.com/Microsoft/vsts-extension-multivalue-control#azure-devops-services";
+const HELP_URL = "https://github.com/dbloch3643/vsts-extension-wiki-multivalue-control#azure-devops-services";
 
 export class MultiValueEvents {
-    public readonly fieldName = VSS.getConfiguration().witInputs.FieldName;
+    public readonly fieldName = SDK.getConfiguration().witInputs.FieldName;
     private readonly _container = document.getElementById("container") as HTMLElement;
     private _onRefreshed: () => void;
     /** Counter to avoid consuming own changed field events. */
@@ -49,10 +50,10 @@ export class MultiValueEvents {
         });
     }
     private _resize = () => {
-        VSS.resize(this._container.scrollWidth || 200, this._container.scrollHeight || 40);
+        SDK.resize(this._container.scrollWidth || 200, this._container.scrollHeight || 40);
     }
     private async _getSelected(): Promise<string[]> {
-        const formService = await WorkItemFormService.getService();
+        const formService = await SDK.getService<IWorkItemFormService>(WorkItemTrackingServiceIds.WorkItemFormService);
         const value = await formService.getFieldValue(this.fieldName);
         if (typeof value !== "string") {
             return [];
@@ -60,7 +61,7 @@ export class MultiValueEvents {
         return value.split(";").filter((v) => !!v).map(s => s.trim());
     }
     private _setSelected = async (values: string[]): Promise<void> => {
-        const formService = await WorkItemFormService.getService();
+        const formService = await SDK.getService<IWorkItemFormService>(WorkItemTrackingServiceIds.WorkItemFormService);
         const fields = await formService.getFields();
 
         const currentField = fields.filter((f) => f.referenceName === this.fieldName)[0];
@@ -83,10 +84,11 @@ export class MultiValueEvents {
         });
     }
     private async _checkFieldType(): Promise<JSX.Element> {
-        const formService = await WorkItemFormService.getService();
+        const formService = await SDK.getService<IWorkItemFormService>(WorkItemTrackingServiceIds.WorkItemFormService);
         const inv = await formService.getInvalidFields();
         if (inv.length > 0 && inv.some((f) => f.referenceName === this.fieldName)) {
-            const field = await getClient().getField(this.fieldName);
+            const client = getClient(WorkItemTrackingRestClient);
+            const field = await client.getField(this.fieldName);
             if (field.isPicklist) {
                 return <div>
                     {`Set the field ${field.name} to use suggested values rather than allowed values. `}

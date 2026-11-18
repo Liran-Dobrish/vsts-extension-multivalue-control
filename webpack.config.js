@@ -9,14 +9,9 @@ module.exports = {
         multivalue: "./src/multivalue.ts"
     },
     output: {
-        filename: "src/[name].js",
-        libraryTarget: "amd"
+        filename: "src/[name].js"
     },
-    externals: [
-        {
-        },
-        /^VSS\/.*/, /^TFS\/.*/, /^q$/
-    ],
+    externals: [],
     resolve: {
         extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"]
     },
@@ -50,9 +45,7 @@ module.exports = {
         }),
         new CopyWebpackPlugin({
                 patterns: [
-                    { from: "./node_modules/es6-promise/dist/es6-promise.min.js", to: "libs/es6-promise.min.js" },
-                    { from: "./node_modules/vss-web-extension-sdk/lib/VSS.SDK.min.js", to: "libs/VSS.SDK.min.js" },
-                    { from: "./src/multivalue.html", to: "./", info: { minimized: true } },
+                    { from: "./src/multivalue.html", to: "./" },
                     { from: "./img", to: "img" },
                     { from: "./readme.md", to: "readme.md" }
         ]})
